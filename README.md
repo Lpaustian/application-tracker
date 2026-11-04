@@ -4,6 +4,8 @@ A desktop app for keeping track of internship applications, written in C++ with 
 
 Each application has a title, company, link, due date, applied date, status, notes, and any files you attached (resume, cover letter). The table shows them with colored status labels, and applications that are past their deadline and not submitted yet turn red.
 
+![The application tracker](resources/screenshot.png)
+
 - Search by title, company, or notes
 - Filter by status with the buttons under the search box
 - Click a column header to sort
