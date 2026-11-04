@@ -50,3 +50,16 @@ bool matchesSearch(const Application& app, const QString& text)
 	}
     return false;
 }
+  
+Application withStatus(const Application& app, Status status, const QDate& today)
+{
+    Application changed = app;
+    changed.status = status;
+
+    if (status == Status::Complete && !changed.appliedDate.isValid()) {
+        changed.appliedDate = today;
+    }
+
+    return changed;
+}
+

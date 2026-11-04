@@ -18,6 +18,10 @@ private slots:
     void searchFindsTitleCompanyAndNotes();
     void searchIgnoresCase();
     void emptySearchMatchesEverything();
+    void withStatusChangesTheStatus();
+    void completeFillsInTheAppliedDate();
+    void completeKeepsAnExistingAppliedDate();
+    void otherStatusesLeaveTheAppliedDateAlone();
 };
 
 static Application sample()
@@ -121,6 +125,41 @@ void TestLogic::searchIgnoresCase()
 void TestLogic::emptySearchMatchesEverything()
 {
     QVERIFY(matchesSearch(sample(), ""));
+}
+
+void TestLogic::withStatusChangesTheStatus()
+{
+    Application app = sample();  // Not Started
+    Application changed = withStatus(app, Status::InProgress, QDate(2026, 11, 5));
+    QCOMPARE(changed.status, Status::InProgress);
+    QCOMPARE(changed.title, app.title);  // everything else is the same
+}
+
+void TestLogic::completeFillsInTheAppliedDate()
+{
+    Application app = sample();
+    QVERIFY(!app.appliedDate.isValid());
+
+    Application changed = withStatus(app, Status::Complete, QDate(2026, 11, 5));
+    QCOMPARE(changed.status, Status::Complete);
+    QCOMPARE(changed.appliedDate, QDate(2026, 11, 5));
+}
+
+void TestLogic::completeKeepsAnExistingAppliedDate()
+{
+    Application app = sample();
+    app.appliedDate = QDate(2026, 11, 2);
+
+    Application changed = withStatus(app, Status::Complete, QDate(2026, 11, 5));
+    QCOMPARE(changed.appliedDate, QDate(2026, 11, 2));
+}
+
+void TestLogic::otherStatusesLeaveTheAppliedDateAlone()
+{
+    Application app = sample();
+
+    Application changed = withStatus(app, Status::InProgress, QDate(2026, 11, 5));
+    QVERIFY(!changed.appliedDate.isValid());
 }
 
 QTEST_GUILESS_MAIN(TestLogic)

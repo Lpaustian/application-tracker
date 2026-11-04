@@ -30,3 +30,9 @@ std::optional<int> daysUntilDue(const Application& app, const QDate& today);
  * case. Empty search text matches everything.
  */
 bool matchesSearch(const Application& app, const QString& text);
+
+/*
+ * A copy of the application with its status changed. When the new status is
+ * Complete and there is no applied date yet, the applied date becomes today.
+ */
+Application withStatus(const Application& app, Status status, const QDate& today);

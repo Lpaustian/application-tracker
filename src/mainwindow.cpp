@@ -1,0 +1,185 @@
+#include "mainwindow.h"
+
+#include "editdialog.h"
+#include "logic.h"
+
+#include <QAbstractItemView>
+#include <QAction>
+#include <QDate>
+#include <QDesktopServices>
+#include <QHBoxLayout>
+#include <QHeaderView>
+#include <QLineEdit>
+#include <QMenu>
+#include <QMessageBox>
+#include <QPushButton>
+#include <QTableView>
+#include <QUrl>
+#include <QVBoxLayout>
+
+MainWindow::MainWindow(ApplicationStore& store, QWidget* parent)
+    : QMainWindow(parent)
+    , m_store(store)
+    , m_search(new QLineEdit)
+    , m_table(new QTableView)
+{
+    setWindowTitle("Internship Applications");
+
+    m_search->setPlaceholderText("Search title, company, or notes");
+    m_search->setClearButtonEnabled(true);
+
+    m_table->setModel(&m_model);
+    m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_table->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_table->verticalHeader()->hide();
+    m_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    m_table->setContextMenuPolicy(Qt::CustomContextMenu);
+
+    auto* addButton = new QPushButton("Add application");
+    connect(addButton, &QPushButton::clicked, this, &MainWindow::addApplication);
+
+    // The search box and the Add button side by side, with the table below.
+    auto* topRow = new QHBoxLayout;
+    topRow->addWidget(m_search);
+    topRow->addWidget(addButton);
+
+    auto* layout = new QVBoxLayout;
+    layout->addLayout(topRow);
+    layout->addWidget(m_table);
+
+    auto* central = new QWidget;
+    central->setLayout(layout);
+    setCentralWidget(central);
+
+    connect(m_search, &QLineEdit::textChanged, this, &MainWindow::showMatching);
+    connect(m_table, &QWidget::customContextMenuRequested, this, &MainWindow::showMenu);
+    connect(m_table, &QTableView::doubleClicked, this, &MainWindow::editRow);
+
+    reload();
+}
+
+void MainWindow::reload()
+{
+    m_all = m_store.all();
+    showMatching();
+}
+
+void MainWindow::showMatching()
+{
+    QList<Application> matches;
+    for (const Application& app : m_all) {
+        if (matchesSearch(app, m_search->text()))
+            matches.append(app);
+    }
+    m_model.setApplications(matches);
+}
+
+void MainWindow::showMenu(const QPoint& position)
+{
+    // The position is where the user clicked, inside the table's visible area.
+    QModelIndex index = m_table->indexAt(position);
+    if (!index.isValid())
+        return;  // they clicked on empty space below the last row
+
+    m_table->selectRow(index.row());
+    const Application app = m_model.applicationAt(index.row());
+
+    QMenu menu(this);
+
+    QAction* edit = menu.addAction("Edit...");
+    connect(edit, &QAction::triggered, this, [this, app] { editApplication(app); });
+
+    menu.addSeparator();
+
+    QAction* link = menu.addAction("Open posting link");
+    link->setEnabled(!app.url.isEmpty());
+    connect(link, &QAction::triggered, this, [this, app] { openLink(app); });
+
+    QAction* files = menu.addAction("Open attached files");
+    files->setEnabled(!app.files.isEmpty());
+    connect(files, &QAction::triggered, this, [this, app] { openFiles(app); });
+
+    menu.addSeparator();
+
+    QMenu* markAs = menu.addMenu("Mark as");
+    const Status statuses[] = {Status::NotStarted, Status::InProgress, Status::Complete,
+                               Status::Interview, Status::Offer, Status::Rejected};
+    for (Status status : statuses) {
+        QAction* action = markAs->addAction(statusToString(status));
+        connect(action, &QAction::triggered, this, [this, app, status] { changeStatus(app, status); });
+    }
+
+    menu.addSeparator();
+
+    QAction* remove = menu.addAction("Delete...");
+    connect(remove, &QAction::triggered, this, [this, app] { deleteApplication(app); });
+
+    // Shows the menu and waits until the user picks something or clicks away.
+    menu.exec(m_table->viewport()->mapToGlobal(position));
+}
+
+void MainWindow::editRow(const QModelIndex& index)
+{
+    editApplication(m_model.applicationAt(index.row()));
+}
+
+void MainWindow::addApplication()
+{
+    EditDialog dialog(Application(), this);
+    if (dialog.exec() != QDialog::Accepted)
+        return;
+
+    if (!m_store.add(dialog.application())) {
+        QMessageBox::warning(this, "Couldn't save", m_store.lastError());
+        return;
+    }
+    reload();
+}
+
+void MainWindow::editApplication(const Application& app)
+{
+    EditDialog dialog(app, this);
+    if (dialog.exec() != QDialog::Accepted)
+        return;
+
+    if (!m_store.update(dialog.application())) {
+        QMessageBox::warning(this, "Couldn't save", m_store.lastError());
+        return;
+    }
+    reload();
+}
+
+void MainWindow::openLink(const Application& app)
+{
+    QDesktopServices::openUrl(QUrl::fromUserInput(app.url));
+}
+
+void MainWindow::openFiles(const Application& app)
+{
+    for (const QString& path : app.files)
+        QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+}
+
+void MainWindow::changeStatus(const Application& app, Status status)
+{
+    Application changed = withStatus(app, status, QDate::currentDate());
+    if (!m_store.update(changed)) {
+        QMessageBox::warning(this, "Couldn't save", m_store.lastError());
+        return;
+    }
+    reload();
+}
+
+void MainWindow::deleteApplication(const Application& app)
+{
+    QString question = QString("Delete \"%1\" at %2?").arg(app.title, app.company);
+    if (QMessageBox::question(this, "Delete application", question) != QMessageBox::Yes)
+        return;
+
+    if (!m_store.remove(app.id)) {
+        QMessageBox::warning(this, "Couldn't delete", m_store.lastError());
+        return;
+    }
+    reload();
+}
