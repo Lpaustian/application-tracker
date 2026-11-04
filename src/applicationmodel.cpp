@@ -127,6 +127,20 @@ QVariant ApplicationModel::data(const QModelIndex& index, int role) const
         if (isOverdue(app, m_today))
             return QBrush(QColor(style::badSoft));
         break;
+    case StatusRole:
+        return static_cast<int>(app.status);
+    case OverdueRole:
+        return isOverdue(app, m_today);
+    case DueNoteRole:
+        return dueNote(app, m_today);
+    case DueToneRole: {
+        const std::optional<int> days = daysUntilDue(app, m_today);
+        if (dueNote(app, m_today).isEmpty() || !days)
+            return PlainTone;
+        if (*days <= 0)
+            return LateTone;
+        return *days <= 7 ? SoonTone : PlainTone;
+    }
     }
 
     return QVariant();

@@ -22,15 +22,31 @@ QString styleSheet()
         }
         QPushButton#primary:hover { background: @accentHover@; }
 
-        QLineEdit, QComboBox, QDateEdit, QPlainTextEdit, QListWidget {
+        QLineEdit, QComboBox, QPlainTextEdit, QListWidget {
             background: @surface@; color: @text@; border: 1px solid @line@;
             border-radius: 8px; padding: 7px 10px;
             selection-background-color: @accentSoft@; selection-color: @text@;
         }
-        QLineEdit:focus, QComboBox:focus, QDateEdit:focus, QPlainTextEdit:focus {
+        QLineEdit:focus, QComboBox:focus, QPlainTextEdit:focus {
             border: 1px solid @accent@;
         }
-        QLineEdit:disabled, QDateEdit:disabled { color: @muted@; background: @sunken@; }
+        QLineEdit:disabled { color: @muted@; background: @sunken@; }
+        QComboBox::drop-down {
+            subcontrol-origin: padding; subcontrol-position: center right;
+            width: 28px; border: none; background: transparent;
+        }
+        QComboBox::down-arrow {
+            image: url(:/resources/arrow-down.png); width: 12px; height: 8px;
+        }
+        QComboBox QAbstractItemView {
+            background: @surface@; color: @text@; border: 1px solid @line@;
+            selection-background-color: @accentSoft@; selection-color: @text@; outline: 0;
+        }
+        QToolButton#datePickerButton {
+            background: @surface@; border: 1px solid @line@; border-radius: 8px; padding: 8px 10px;
+        }
+        QToolButton#datePickerButton:hover { border-color: @muted@; }
+        QToolButton#datePickerButton:disabled { background: @sunken@; }
         QCheckBox { color: @text@; spacing: 6px; }
 
         QFrame#stat { background: @surface@; border: 1px solid @line@; border-radius: 10px; }
@@ -42,9 +58,6 @@ QString styleSheet()
             background: @surface@; border: 1px solid @line@; border-radius: 10px;
             selection-background-color: @accentSoft@; selection-color: @text@; outline: 0;
         }
-        QTableView::item { padding: 4px 12px; border-bottom: 1px solid @line@; }
-        QTableView::item:hover { background: @sunken@; }
-        QTableView::item:selected { background: @accentSoft@; color: @text@; }
         QHeaderView::section {
             background: @sunken@; color: @muted@; border: none; padding: 8px 12px;
             font-size: 11px; font-weight: 600;

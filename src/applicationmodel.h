@@ -21,6 +21,15 @@ public:
         ColumnCount
     };
 
+    // Extra questions the delegate asks besides the usual text and color.
+    enum Role {
+        StatusRole = Qt::UserRole,  // the Status, as a number
+        OverdueRole,                // true if the application is overdue
+        DueNoteRole,                // the small text under the due date
+        DueToneRole,                // how urgent the due date is: a Tone
+    };
+    enum Tone { PlainTone, SoonTone, LateTone };
+
     explicit ApplicationModel(QObject* parent = nullptr);
 
     // Replaces everything in the table.

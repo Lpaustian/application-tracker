@@ -1,10 +1,10 @@
 #include "editdialog.h"
 
+#include "datepicker.h"
 #include "logic.h"
 
 #include <QCheckBox>
 #include <QComboBox>
-#include <QDateEdit>
 #include <QDialogButtonBox>
 #include <QFileDialog>
 #include <QFormLayout>
@@ -23,9 +23,9 @@ EditDialog::EditDialog(const Application& app, QWidget* parent)
     , m_company(new QLineEdit(app.company))
     , m_url(new QLineEdit(app.url))
     , m_hasDue(new QCheckBox("Has a due date"))
-    , m_due(new QDateEdit)
+    , m_due(new DatePicker)
     , m_hasApplied(new QCheckBox("Already applied"))
-    , m_applied(new QDateEdit)
+    , m_applied(new DatePicker)
     , m_status(new QComboBox)
     , m_files(new QListWidget)
     , m_notes(new QPlainTextEdit(app.notes))
@@ -34,10 +34,6 @@ EditDialog::EditDialog(const Application& app, QWidget* parent)
 
     // Each date has a checkbox, because a date can be missing. The date box
     // is greyed out until the checkbox is ticked.
-    for (QDateEdit* edit : {m_due, m_applied}) {
-        edit->setCalendarPopup(true);
-        edit->setDisplayFormat("MMM d, yyyy");
-    }
     m_hasDue->setChecked(app.dueDate.isValid());
     m_due->setDate(app.dueDate.isValid() ? app.dueDate : QDate::currentDate());
     m_due->setEnabled(m_hasDue->isChecked());
@@ -62,10 +58,12 @@ EditDialog::EditDialog(const Application& app, QWidget* parent)
     connect(removeFileButton, &QPushButton::clicked, this, &EditDialog::removeFile);
 
     auto* dueRow = new QHBoxLayout;
+    dueRow->setSpacing(14);
     dueRow->addWidget(m_hasDue);
     dueRow->addWidget(m_due);
 
     auto* appliedRow = new QHBoxLayout;
+    appliedRow->setSpacing(14);
     appliedRow->addWidget(m_hasApplied);
     appliedRow->addWidget(m_applied);
 
@@ -80,6 +78,9 @@ EditDialog::EditDialog(const Application& app, QWidget* parent)
 
     // A form layout puts a label on the left and a field on the right, row by row.
     auto* form = new QFormLayout;
+    form->setLabelAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    form->setHorizontalSpacing(18);
+    form->setVerticalSpacing(12);
     form->addRow("Title", m_title);
     form->addRow("Company", m_company);
     form->addRow("Link", m_url);
@@ -94,10 +95,15 @@ EditDialog::EditDialog(const Application& app, QWidget* parent)
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
     auto* layout = new QVBoxLayout(this);
+    layout->setContentsMargins(24, 24, 24, 20);
+    layout->setSpacing(16);
     layout->addLayout(form);
     layout->addWidget(buttons);
 
-    resize(520, 600);
+    m_files->setMaximumHeight(110);
+    m_notes->setMinimumHeight(90);
+    setMinimumWidth(560);
+    resize(600, 640);
 }
 
 Application EditDialog::application() const

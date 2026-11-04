@@ -103,3 +103,20 @@ Summary summarize(const QList<Application>& applications, const QDate& today)
 
     return result;
 }
+
+QString dueNote(const Application& app, const QDate& today)
+{
+    // Once it's submitted the deadline no longer matters.
+    if (app.status != Status::NotStarted && app.status != Status::InProgress)
+        return QString();
+
+    const std::optional<int> days = daysUntilDue(app, today);
+    if (!days)
+        return QString();
+
+    if (*days < 0)
+        return QString("%1d past due").arg(-*days);
+    if (*days == 0)
+        return "Due today";
+    return QString("in %1d").arg(*days);
+}

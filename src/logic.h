@@ -33,6 +33,13 @@ std::optional<int> daysUntilDue(const Application& app, const QDate& today);
  */
 bool matchesSearch(const Application& app, const QString& text);
 
+/*
+ * The small line under the due date: "in 5d", "Due today", or "3d past due".
+ * It is empty when there is no due date, or when the application is already
+ * submitted (any status other than Not Started or In Progress).
+ */
+QString dueNote(const Application& app, const QDate& today);
+
 // The four numbers shown at the top of the window.
 struct Summary {
     int tracked = 0;     // every application

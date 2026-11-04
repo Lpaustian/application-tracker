@@ -30,6 +30,11 @@ private slots:
     void summaryCountsSubmittedAndInterviews();
     void summaryDueSoonWindow();
     void summaryDueSoonIgnoresSubmitted();
+    void dueNoteCountsDown();
+    void dueNoteOnTheDueDate();
+    void dueNotePastDue();
+    void dueNoteIsEmptyWithoutADate();
+    void dueNoteIsEmptyOnceSubmitted();
 };
 
 static Application sample()
@@ -252,6 +257,37 @@ void TestLogic::summaryDueSoonIgnoresSubmitted()
         withStatusAndDue(Status::Interview, QDate(2026, 11, 6)),
     };
     QCOMPARE(summarize(apps, today).dueSoon, 0);
+}
+
+void TestLogic::dueNoteCountsDown()
+{
+    Application app = withStatusAndDue(Status::NotStarted, QDate(2026, 11, 10));
+    QCOMPARE(dueNote(app, QDate(2026, 11, 5)), QString("in 5d"));
+    QCOMPARE(dueNote(app, QDate(2026, 11, 9)), QString("in 1d"));
+}
+
+void TestLogic::dueNoteOnTheDueDate()
+{
+    Application app = withStatusAndDue(Status::InProgress, QDate(2026, 11, 10));
+    QCOMPARE(dueNote(app, QDate(2026, 11, 10)), QString("Due today"));
+}
+
+void TestLogic::dueNotePastDue()
+{
+    Application app = withStatusAndDue(Status::NotStarted, QDate(2026, 11, 10));
+    QCOMPARE(dueNote(app, QDate(2026, 11, 13)), QString("3d past due"));
+}
+
+void TestLogic::dueNoteIsEmptyWithoutADate()
+{
+    Application app = withStatusAndDue(Status::NotStarted, QDate());
+    QVERIFY(dueNote(app, QDate(2026, 11, 5)).isEmpty());
+}
+
+void TestLogic::dueNoteIsEmptyOnceSubmitted()
+{
+    Application app = withStatusAndDue(Status::Complete, QDate(2026, 11, 10));
+    QVERIFY(dueNote(app, QDate(2026, 11, 5)).isEmpty());
 }
 
 QTEST_GUILESS_MAIN(TestLogic)

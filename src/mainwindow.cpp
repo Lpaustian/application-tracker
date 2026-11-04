@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 
+#include "applicationdelegate.h"
 #include "editdialog.h"
 #include "logic.h"
 
@@ -55,9 +56,11 @@ MainWindow::MainWindow(ApplicationStore& store, QWidget* parent)
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->verticalHeader()->hide();
-    m_table->verticalHeader()->setDefaultSectionSize(48);
+    m_table->verticalHeader()->setDefaultSectionSize(52);
+    m_table->setItemDelegate(new ApplicationDelegate(m_table));
     m_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_table->horizontalHeader()->setHighlightSections(false);
+    m_table->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     m_table->setShowGrid(false);
     m_table->setContextMenuPolicy(Qt::CustomContextMenu);
 

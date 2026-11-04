@@ -4,9 +4,9 @@
 
 #include <QDialog>
 
+class DatePicker;
 class QCheckBox;
 class QComboBox;
-class QDateEdit;
 class QLineEdit;
 class QListWidget;
 class QPlainTextEdit;
@@ -35,9 +35,9 @@ private:
     QLineEdit* m_company;
     QLineEdit* m_url;
     QCheckBox* m_hasDue;
-    QDateEdit* m_due;
+    DatePicker* m_due;
     QCheckBox* m_hasApplied;
-    QDateEdit* m_applied;
+    DatePicker* m_applied;
     QComboBox* m_status;
     QListWidget* m_files;
     QPlainTextEdit* m_notes;
