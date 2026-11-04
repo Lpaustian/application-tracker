@@ -35,6 +35,11 @@ private slots:
     void dueNotePastDue();
     void dueNoteIsEmptyWithoutADate();
     void dueNoteIsEmptyOnceSubmitted();
+    void filterByStatusOnly();
+    void filterBySearchOnly();
+    void filterByStatusAndSearch();
+    void filterKeepsTheOrder();
+    void countsByStatus();
 };
 
 static Application sample()
@@ -288,6 +293,62 @@ void TestLogic::dueNoteIsEmptyOnceSubmitted()
 {
     Application app = withStatusAndDue(Status::Complete, QDate(2026, 11, 10));
     QVERIFY(dueNote(app, QDate(2026, 11, 5)).isEmpty());
+}
+
+static QList<Application> filterSamples()
+{
+    Application a;
+    a.title = "Backend Intern";
+    a.company = "Acme";
+    a.status = Status::Interview;
+
+    Application b;
+    b.title = "Data Intern";
+    b.company = "Globex";
+    b.status = Status::Complete;
+
+    Application c;
+    c.title = "Test Engineer";
+    c.company = "Initech";
+    c.status = Status::Interview;
+
+    return {a, b, c};
+}
+
+void TestLogic::filterByStatusOnly()
+{
+    QList<Application> result = filterApplications(filterSamples(), "", Status::Interview);
+    QCOMPARE(result.size(), 2);
+
+    // No status means every status.
+    QCOMPARE(filterApplications(filterSamples(), "", std::nullopt).size(), 3);
+}
+
+void TestLogic::filterBySearchOnly()
+{
+    QList<Application> result = filterApplications(filterSamples(), "intern", std::nullopt);
+    QCOMPARE(result.size(), 2);  // Backend Intern and Data Intern
+}
+
+void TestLogic::filterByStatusAndSearch()
+{
+    QList<Application> result = filterApplications(filterSamples(), "intern", Status::Interview);
+    QCOMPARE(result.size(), 1);
+    QCOMPARE(result[0].company, QString("Acme"));
+}
+
+void TestLogic::filterKeepsTheOrder()
+{
+    QList<Application> result = filterApplications(filterSamples(), "", Status::Interview);
+    QCOMPARE(result[0].company, QString("Acme"));
+    QCOMPARE(result[1].company, QString("Initech"));
+}
+
+void TestLogic::countsByStatus()
+{
+    QCOMPARE(countWithStatus(filterSamples(), Status::Interview), 2);
+    QCOMPARE(countWithStatus(filterSamples(), Status::Complete), 1);
+    QCOMPARE(countWithStatus(filterSamples(), Status::Offer), 0);
 }
 
 QTEST_GUILESS_MAIN(TestLogic)

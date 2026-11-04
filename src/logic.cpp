@@ -120,3 +120,26 @@ QString dueNote(const Application& app, const QDate& today)
         return "Due today";
     return QString("in %1d").arg(*days);
 }
+
+QList<Application> filterApplications(const QList<Application>& applications, const QString& search,
+                                      std::optional<Status> status)
+{
+    QList<Application> matches;
+    for (const Application& app : applications) {
+        if (status && app.status != *status)
+            continue;
+        if (matchesSearch(app, search))
+            matches.append(app);
+    }
+    return matches;
+}
+
+int countWithStatus(const QList<Application>& applications, Status status)
+{
+    int count = 0;
+    for (const Application& app : applications) {
+        if (app.status == status)
+            ++count;
+    }
+    return count;
+}

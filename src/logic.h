@@ -34,6 +34,16 @@ std::optional<int> daysUntilDue(const Application& app, const QDate& today);
 bool matchesSearch(const Application& app, const QString& text);
 
 /*
+ * The applications that match the search text and, if one is given, have that
+ * status. They stay in the order they came in.
+ */
+QList<Application> filterApplications(const QList<Application>& applications, const QString& search,
+                                      std::optional<Status> status);
+
+// How many of the applications have this status.
+int countWithStatus(const QList<Application>& applications, Status status);
+
+/*
  * The small line under the due date: "in 5d", "Due today", or "3d past due".
  * It is empty when there is no due date, or when the application is already
  * submitted (any status other than Not Started or In Progress).

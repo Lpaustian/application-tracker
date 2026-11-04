@@ -43,6 +43,7 @@ static QFrame* makeStat(const QString& caption, QLabel*& valueLabel, bool alert)
 MainWindow::MainWindow(ApplicationStore& store, QWidget* parent)
     : QMainWindow(parent)
     , m_store(store)
+    , m_chipRow(new QHBoxLayout)
     , m_search(new QLineEdit)
     , m_table(new QTableView)
 {
@@ -105,6 +106,8 @@ MainWindow::MainWindow(ApplicationStore& store, QWidget* parent)
     layout->addLayout(headerRow);
     layout->addLayout(stats);
     layout->addWidget(m_search);
+    m_chipRow->setSpacing(6);
+    layout->addLayout(m_chipRow);
     layout->addWidget(m_table);
 
     auto* central = new QWidget;
@@ -123,7 +126,46 @@ void MainWindow::reload()
 {
     m_all = m_store.all();
     updateSummary();
+    rebuildChips();
     showMatching();
+}
+
+void MainWindow::rebuildChips()
+{
+    // Remove the old buttons. deleteLater is used because this can run from
+    // inside one of those buttons' own click handlers.
+    while (QLayoutItem* item = m_chipRow->takeAt(0)) {
+        if (QWidget* widget = item->widget())
+            widget->deleteLater();
+        delete item;
+    }
+
+    auto addChip = [this](const QString& label, std::optional<Status> status, int count) {
+        auto* chip = new QPushButton(QString("%1  %2").arg(label).arg(count));
+        chip->setObjectName("chip");
+        chip->setCheckable(true);
+        chip->setChecked(m_statusFilter == status);
+        chip->setCursor(Qt::PointingHandCursor);
+        connect(chip, &QPushButton::clicked, this, [this, status] {
+            m_statusFilter = status;
+            rebuildChips();
+            showMatching();
+        });
+        m_chipRow->addWidget(chip);
+    };
+
+    addChip("All", std::nullopt, m_all.size());
+
+    // Only statuses that have applications get a button, plus the one that is
+    // currently selected so it can be clicked off again.
+    const Status statuses[] = {Status::NotStarted, Status::InProgress, Status::Complete,
+                               Status::Interview, Status::Offer, Status::Rejected};
+    for (Status status : statuses) {
+        const int count = countWithStatus(m_all, status);
+        if (count > 0 || m_statusFilter == status)
+            addChip(statusToString(status), status, count);
+    }
+    m_chipRow->addStretch();
 }
 
 void MainWindow::updateSummary()
@@ -137,12 +179,7 @@ void MainWindow::updateSummary()
 
 void MainWindow::showMatching()
 {
-    QList<Application> matches;
-    for (const Application& app : m_all) {
-        if (matchesSearch(app, m_search->text()))
-            matches.append(app);
-    }
-    m_model.setApplications(matches);
+    m_model.setApplications(filterApplications(m_all, m_search->text(), m_statusFilter));
 }
 
 void MainWindow::showMenu(const QPoint& position)

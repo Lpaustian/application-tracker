@@ -6,6 +6,9 @@
 #include <QList>
 #include <QMainWindow>
 
+#include <optional>
+
+class QHBoxLayout;
 class QLabel;
 class QLineEdit;
 class QTableView;
@@ -33,6 +36,9 @@ private:
     // Refreshes the four numbers at the top.
     void updateSummary();
 
+    // Rebuilds the row of status buttons under the search box.
+    void rebuildChips();
+
     void addApplication();
     void editApplication(const Application& app);
     void openLink(const Application& app);
@@ -43,6 +49,8 @@ private:
     ApplicationStore& m_store;
     ApplicationModel m_model;
     QList<Application> m_all;  // everything in the database
+    std::optional<Status> m_statusFilter;  // empty means show every status
+    QHBoxLayout* m_chipRow;
     QLineEdit* m_search;
     QTableView* m_table;
     QLabel* m_trackedCount;

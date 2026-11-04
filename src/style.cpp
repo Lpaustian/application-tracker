@@ -17,6 +17,12 @@ QString styleSheet()
             border-radius: 8px; padding: 7px 14px;
         }
         QPushButton:hover { border-color: @muted@; }
+        QPushButton#chip {
+            border-radius: 10px; padding: 5px 14px; min-height: 20px; font-size: 13px;
+        }
+        QPushButton#chip:checked {
+            background: @text@; color: @background@; border-color: @text@;
+        }
         QPushButton#primary {
             background: @accent@; color: white; border: 1px solid @accent@; font-weight: 600;
         }
