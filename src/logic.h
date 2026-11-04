@@ -2,6 +2,8 @@
 
 #include "application.h"
 
+#include <QList>
+
 #include <optional>
 
 // "Not Started", "In Progress", "Complete", "Interview", "Offer", "Rejected"
@@ -30,6 +32,28 @@ std::optional<int> daysUntilDue(const Application& app, const QDate& today);
  * case. Empty search text matches everything.
  */
 bool matchesSearch(const Application& app, const QString& text);
+
+// The four numbers shown at the top of the window.
+struct Summary {
+    int tracked = 0;     // every application
+    int submitted = 0;   // Complete, Interview, Offer, or Rejected
+    int interviews = 0;  // Interview
+    int dueSoon = 0;     // due within the next 7 days (today counts) and not submitted yet
+};
+
+/*
+ * Counts the applications for the summary. "Not submitted yet" means the
+ * status is Not Started or In Progress. An application due today counts as
+ * due soon, and one due 7 days from now does too, but one that is already
+ * past due, or has no due date, does not.
+ */
+Summary summarize(const QList<Application>& applications, const QDate& today);
+
+/*
+ * For sorting dates: true if `a` should come before `b`, earliest first. An
+ * empty date always comes after a real one.
+ */
+bool dateComesFirst(const QDate& a, const QDate& b);
 
 /*
  * A copy of the application with its status changed. When the new status is

@@ -1,9 +1,12 @@
 #include "applicationmodel.h"
 
 #include "logic.h"
+#include "style.h"
 
 #include <QBrush>
 #include <QColor>
+
+#include <algorithm>
 
 ApplicationModel::ApplicationModel(QObject* parent)
     : QAbstractTableModel(parent)
@@ -15,7 +18,52 @@ void ApplicationModel::setApplications(const QList<Application>& applications)
 {
     beginResetModel();
     m_applications = applications;
+    sortApplications();
     endResetModel();
+}
+
+void ApplicationModel::sort(int column, Qt::SortOrder order)
+{
+    m_sortColumn = column;
+    m_sortOrder = order;
+
+    beginResetModel();
+    sortApplications();
+    endResetModel();
+}
+
+void ApplicationModel::sortApplications()
+{
+    if (m_sortColumn < 0 || m_sortColumn >= ColumnCount)
+        return;
+
+    const bool ascending = m_sortOrder == Qt::AscendingOrder;
+
+    // Returns true if `a` should be above `b`. Equal rows keep their order,
+    // because stable_sort never swaps rows that compare as equal.
+    auto before = [&](const Application& a, const Application& b) {
+        auto byNumber = [&](int x, int y) { return ascending ? x < y : x > y; };
+
+        switch (m_sortColumn) {
+        case TitleColumn:
+            return byNumber(a.title.compare(b.title, Qt::CaseInsensitive), 0);
+        case CompanyColumn:
+            return byNumber(a.company.compare(b.company, Qt::CaseInsensitive), 0);
+        case StatusColumn:
+            return byNumber(static_cast<int>(a.status), static_cast<int>(b.status));
+        case DueColumn:
+        case AppliedColumn: {
+            const QDate& x = m_sortColumn == DueColumn ? a.dueDate : a.appliedDate;
+            const QDate& y = m_sortColumn == DueColumn ? b.dueDate : b.appliedDate;
+            if (x.isValid() && y.isValid())
+                return ascending ? x < y : y < x;
+            return dateComesFirst(x, y);  // empty dates stay at the bottom either way
+        }
+        }
+        return false;
+    };
+
+    std::stable_sort(m_applications.begin(), m_applications.end(), before);
 }
 
 const Application& ApplicationModel::applicationAt(int row) const
@@ -77,7 +125,7 @@ QVariant ApplicationModel::data(const QModelIndex& index, int role) const
         break;
     case Qt::BackgroundRole:
         if (isOverdue(app, m_today))
-            return QBrush(QColor(255, 220, 220));
+            return QBrush(QColor(style::badSoft));
         break;
     }
 

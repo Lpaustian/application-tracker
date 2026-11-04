@@ -63,3 +63,43 @@ Application withStatus(const Application& app, Status status, const QDate& today
     return changed;
 }
 
+
+bool dateComesFirst(const QDate& a, const QDate& b)
+{
+    if (!a.isValid() && !b.isValid()) {
+        return false;  // Both empty: neither comes first
+    }
+    if (!a.isValid()) {
+        return false;  // a is empty: it never comes first
+    }
+    if (!b.isValid()) {
+        return true;   // b is empty but a is valid: a comes first
+    }
+    return a < b;      // Both valid: earlier date comes first
+}
+
+
+Summary summarize(const QList<Application>& applications, const QDate& today)
+{
+    Summary result;
+    result.tracked = applications.size();
+
+    for (const Application& app : applications) {
+        if (app.status != Status::NotStarted && app.status != Status::InProgress) {
+            ++result.submitted;
+        }
+
+        if (app.status == Status::Interview) {
+            ++result.interviews;
+        }
+
+        if (app.status == Status::NotStarted || app.status == Status::InProgress) {
+            const std::optional<int> days = daysUntilDue(app, today);
+            if (days && *days >= 0 && *days <= 7) {
+                ++result.dueSoon;
+            }
+        }
+    }
+
+    return result;
+}

@@ -36,7 +36,14 @@ public:
     QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
+    // Called by the table when you click a column header.
+    void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
+
 private:
+    void sortApplications();
+
     QList<Application> m_applications;
     QDate m_today;
+    int m_sortColumn = -1;  // -1 means keep the order they were given in
+    Qt::SortOrder m_sortOrder = Qt::AscendingOrder;
 };

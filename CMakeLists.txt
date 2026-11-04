@@ -17,6 +17,8 @@ add_library(tracker_core STATIC
     src/applicationmodel.cpp
     src/editdialog.h
     src/editdialog.cpp
+    src/style.h
+    src/style.cpp
 )
 target_include_directories(tracker_core PUBLIC src)
 target_link_libraries(tracker_core PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Sql)

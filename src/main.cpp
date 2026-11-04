@@ -1,8 +1,10 @@
 #include "applicationstore.h"
 #include "mainwindow.h"
+#include "style.h"
 
 #include <QApplication>
 #include <QDir>
+#include <QFont>
 #include <QMessageBox>
 #include <QStandardPaths>
 
@@ -10,6 +12,8 @@ int main(int argc, char* argv[])
 {
     QApplication app(argc, argv);
     QApplication::setApplicationName("Internship Tracker");
+    QApplication::setFont(QFont("Segoe UI", 10));
+    app.setStyleSheet(style::styleSheet());
 
     // The database goes in the user's app data folder, unless a path is given
     // on the command line.
@@ -29,7 +33,7 @@ int main(int argc, char* argv[])
     }
 
     MainWindow window(store);
-    window.resize(900, 500);
+    window.resize(1040, 680);
     window.show();
 
     return app.exec();

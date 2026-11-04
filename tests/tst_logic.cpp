@@ -22,6 +22,14 @@ private slots:
     void completeFillsInTheAppliedDate();
     void completeKeepsAnExistingAppliedDate();
     void otherStatusesLeaveTheAppliedDateAlone();
+    void earlierDateComesFirst();
+    void realDateComesBeforeEmpty();
+    void emptyDateNeverComesFirst();
+    void summaryOfNothing();
+    void summaryCountsEverythingAsTracked();
+    void summaryCountsSubmittedAndInterviews();
+    void summaryDueSoonWindow();
+    void summaryDueSoonIgnoresSubmitted();
 };
 
 static Application sample()
@@ -160,6 +168,90 @@ void TestLogic::otherStatusesLeaveTheAppliedDateAlone()
 
     Application changed = withStatus(app, Status::InProgress, QDate(2026, 11, 5));
     QVERIFY(!changed.appliedDate.isValid());
+}
+
+void TestLogic::earlierDateComesFirst()
+{
+    QVERIFY(dateComesFirst(QDate(2026, 11, 1), QDate(2026, 11, 20)));
+    QVERIFY(!dateComesFirst(QDate(2026, 11, 20), QDate(2026, 11, 1)));
+    QVERIFY(!dateComesFirst(QDate(2026, 11, 5), QDate(2026, 11, 5)));  // equal dates
+}
+
+void TestLogic::realDateComesBeforeEmpty()
+{
+    QVERIFY(dateComesFirst(QDate(2026, 11, 20), QDate()));
+}
+
+void TestLogic::emptyDateNeverComesFirst()
+{
+    QVERIFY(!dateComesFirst(QDate(), QDate(2026, 11, 20)));
+    QVERIFY(!dateComesFirst(QDate(), QDate()));
+}
+
+static Application withStatusAndDue(Status status, const QDate& due)
+{
+    Application app;
+    app.status = status;
+    app.dueDate = due;
+    return app;
+}
+
+void TestLogic::summaryOfNothing()
+{
+    Summary s = summarize({}, QDate(2026, 11, 5));
+    QCOMPARE(s.tracked, 0);
+    QCOMPARE(s.submitted, 0);
+    QCOMPARE(s.interviews, 0);
+    QCOMPARE(s.dueSoon, 0);
+}
+
+void TestLogic::summaryCountsEverythingAsTracked()
+{
+    QList<Application> apps = {
+        withStatusAndDue(Status::NotStarted, QDate()),
+        withStatusAndDue(Status::Complete, QDate()),
+        withStatusAndDue(Status::Rejected, QDate()),
+    };
+    QCOMPARE(summarize(apps, QDate(2026, 11, 5)).tracked, 3);
+}
+
+void TestLogic::summaryCountsSubmittedAndInterviews()
+{
+    QList<Application> apps = {
+        withStatusAndDue(Status::NotStarted, QDate()),
+        withStatusAndDue(Status::InProgress, QDate()),
+        withStatusAndDue(Status::Complete, QDate()),
+        withStatusAndDue(Status::Interview, QDate()),
+        withStatusAndDue(Status::Interview, QDate()),
+        withStatusAndDue(Status::Offer, QDate()),
+        withStatusAndDue(Status::Rejected, QDate()),
+    };
+    Summary s = summarize(apps, QDate(2026, 11, 5));
+    QCOMPARE(s.submitted, 5);   // everything past "In Progress"
+    QCOMPARE(s.interviews, 2);
+}
+
+void TestLogic::summaryDueSoonWindow()
+{
+    QDate today(2026, 11, 5);
+    QList<Application> apps = {
+        withStatusAndDue(Status::NotStarted, QDate(2026, 11, 4)),   // yesterday: too late
+        withStatusAndDue(Status::NotStarted, QDate(2026, 11, 5)),   // today: counts
+        withStatusAndDue(Status::InProgress, QDate(2026, 11, 12)),  // 7 days: counts
+        withStatusAndDue(Status::NotStarted, QDate(2026, 11, 13)),  // 8 days: too far
+        withStatusAndDue(Status::NotStarted, QDate()),              // no date
+    };
+    QCOMPARE(summarize(apps, today).dueSoon, 2);
+}
+
+void TestLogic::summaryDueSoonIgnoresSubmitted()
+{
+    QDate today(2026, 11, 5);
+    QList<Application> apps = {
+        withStatusAndDue(Status::Complete, QDate(2026, 11, 6)),
+        withStatusAndDue(Status::Interview, QDate(2026, 11, 6)),
+    };
+    QCOMPARE(summarize(apps, today).dueSoon, 0);
 }
 
 QTEST_GUILESS_MAIN(TestLogic)

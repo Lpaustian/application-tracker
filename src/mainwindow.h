@@ -6,6 +6,7 @@
 #include <QList>
 #include <QMainWindow>
 
+class QLabel;
 class QLineEdit;
 class QTableView;
 
@@ -29,6 +30,9 @@ private:
     // Loads everything from the database, then applies the search.
     void reload();
 
+    // Refreshes the four numbers at the top.
+    void updateSummary();
+
     void addApplication();
     void editApplication(const Application& app);
     void openLink(const Application& app);
@@ -41,4 +45,8 @@ private:
     QList<Application> m_all;  // everything in the database
     QLineEdit* m_search;
     QTableView* m_table;
+    QLabel* m_trackedCount;
+    QLabel* m_submittedCount;
+    QLabel* m_interviewCount;
+    QLabel* m_dueSoonCount;
 };

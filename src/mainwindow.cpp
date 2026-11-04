@@ -8,7 +8,9 @@
 #include <QDate>
 #include <QDesktopServices>
 #include <QHBoxLayout>
+#include <QFrame>
 #include <QHeaderView>
+#include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
 #include <QMessageBox>
@@ -17,13 +19,33 @@
 #include <QUrl>
 #include <QVBoxLayout>
 
+// One box in the summary strip: a big number with a small caption under it.
+static QFrame* makeStat(const QString& caption, QLabel*& valueLabel, bool alert)
+{
+    auto* box = new QFrame;
+    box->setObjectName("stat");
+
+    valueLabel = new QLabel("0");
+    valueLabel->setObjectName(alert ? "statValueAlert" : "statValue");
+
+    auto* captionLabel = new QLabel(caption);
+    captionLabel->setObjectName("statCaption");
+
+    auto* layout = new QVBoxLayout(box);
+    layout->setContentsMargins(16, 12, 16, 12);
+    layout->setSpacing(2);
+    layout->addWidget(valueLabel);
+    layout->addWidget(captionLabel);
+    return box;
+}
+
 MainWindow::MainWindow(ApplicationStore& store, QWidget* parent)
     : QMainWindow(parent)
     , m_store(store)
     , m_search(new QLineEdit)
     , m_table(new QTableView)
 {
-    setWindowTitle("Internship Applications");
+    setWindowTitle("Internship Application Log");
 
     m_search->setPlaceholderText("Search title, company, or notes");
     m_search->setClearButtonEnabled(true);
@@ -33,22 +55,57 @@ MainWindow::MainWindow(ApplicationStore& store, QWidget* parent)
     m_table->setSelectionMode(QAbstractItemView::SingleSelection);
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->verticalHeader()->hide();
+    m_table->verticalHeader()->setDefaultSectionSize(48);
     m_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    m_table->horizontalHeader()->setHighlightSections(false);
+    m_table->setShowGrid(false);
     m_table->setContextMenuPolicy(Qt::CustomContextMenu);
 
-    auto* addButton = new QPushButton("Add application");
+    // Clicking a column header sorts by that column. Start with the soonest
+    // deadline at the top.
+    m_table->setSortingEnabled(true);
+    m_table->sortByColumn(ApplicationModel::DueColumn, Qt::AscendingOrder);
+
+    auto* title = new QLabel("Internship Application Log");
+    title->setObjectName("title");
+    auto* subtitle = new QLabel("Summer 2027 search. Right-click an application for quick actions, "
+                                "or double-click it to edit.");
+    subtitle->setObjectName("subtitle");
+
+    auto* addButton = new QPushButton("+ New application");
+    addButton->setObjectName("primary");
+    addButton->setCursor(Qt::PointingHandCursor);
     connect(addButton, &QPushButton::clicked, this, &MainWindow::addApplication);
 
-    // The search box and the Add button side by side, with the table below.
-    auto* topRow = new QHBoxLayout;
-    topRow->addWidget(m_search);
-    topRow->addWidget(addButton);
+    // Title and subtitle stacked on the left, the button on the right.
+    auto* titleColumn = new QVBoxLayout;
+    titleColumn->setSpacing(2);
+    titleColumn->addWidget(title);
+    titleColumn->addWidget(subtitle);
+
+    auto* headerRow = new QHBoxLayout;
+    headerRow->addLayout(titleColumn);
+    headerRow->addStretch();
+    headerRow->addWidget(addButton, 0, Qt::AlignBottom);
+
+    // The four numbers across the top.
+    auto* stats = new QHBoxLayout;
+    stats->setSpacing(12);
+    stats->addWidget(makeStat("TRACKED", m_trackedCount, false));
+    stats->addWidget(makeStat("SUBMITTED", m_submittedCount, false));
+    stats->addWidget(makeStat("INTERVIEWS", m_interviewCount, false));
+    stats->addWidget(makeStat("DUE IN 7 DAYS, NOT SENT", m_dueSoonCount, true));
 
     auto* layout = new QVBoxLayout;
-    layout->addLayout(topRow);
+    layout->setContentsMargins(24, 20, 24, 24);
+    layout->setSpacing(16);
+    layout->addLayout(headerRow);
+    layout->addLayout(stats);
+    layout->addWidget(m_search);
     layout->addWidget(m_table);
 
     auto* central = new QWidget;
+    central->setObjectName("central");
     central->setLayout(layout);
     setCentralWidget(central);
 
@@ -62,7 +119,17 @@ MainWindow::MainWindow(ApplicationStore& store, QWidget* parent)
 void MainWindow::reload()
 {
     m_all = m_store.all();
+    updateSummary();
     showMatching();
+}
+
+void MainWindow::updateSummary()
+{
+    Summary summary = summarize(m_all, QDate::currentDate());
+    m_trackedCount->setText(QString::number(summary.tracked));
+    m_submittedCount->setText(QString::number(summary.submitted));
+    m_interviewCount->setText(QString::number(summary.interviews));
+    m_dueSoonCount->setText(QString::number(summary.dueSoon));
 }
 
 void MainWindow::showMatching()

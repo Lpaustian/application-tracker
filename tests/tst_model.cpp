@@ -16,6 +16,13 @@ private slots:
     void statusColumnSaysOverdueWhenOverdue();
     void overdueRowsAreHighlighted();
     void otherRowsAreNotHighlighted();
+    void sortsByTitle();
+    void sortsByCompanyBackwards();
+    void sortsByStatusInWorkflowOrder();
+    void sortsByDueDateWithBlanksAtTheBottom();
+    void blanksStayAtTheBottomWhenSortingBackwards();
+    void keepsTheSortWhenTheListIsReplaced();
+    void applicationAtFollowsTheSort();
 
 private:
     QModelIndex cell(int row, int column) const { return m_model.index(row, column); }
@@ -97,6 +104,72 @@ void TestModel::otherRowsAreNotHighlighted()
 {
     QVERIFY(!m_model.data(cell(1, ApplicationModel::TitleColumn), Qt::BackgroundRole).isValid());
     QVERIFY(!m_model.data(cell(2, ApplicationModel::TitleColumn), Qt::BackgroundRole).isValid());
+}
+
+// init() adds: Backend Intern (Acme, Not Started, due Nov 10), Data Intern
+// (Globex, Complete, due Nov 10), Test Intern (Initech, In Progress, no date).
+
+void TestModel::sortsByTitle()
+{
+    m_model.sort(ApplicationModel::TitleColumn, Qt::DescendingOrder);
+    QCOMPARE(m_model.applicationAt(0).title, QString("Test Intern"));
+    QCOMPARE(m_model.applicationAt(2).title, QString("Backend Intern"));
+
+    m_model.sort(ApplicationModel::TitleColumn, Qt::AscendingOrder);
+    QCOMPARE(m_model.applicationAt(0).title, QString("Backend Intern"));
+    QCOMPARE(m_model.applicationAt(1).title, QString("Data Intern"));
+    QCOMPARE(m_model.applicationAt(2).title, QString("Test Intern"));
+}
+
+void TestModel::sortsByCompanyBackwards()
+{
+    m_model.sort(ApplicationModel::CompanyColumn, Qt::DescendingOrder);
+    QCOMPARE(m_model.applicationAt(0).company, QString("Initech"));
+    QCOMPARE(m_model.applicationAt(1).company, QString("Globex"));
+    QCOMPARE(m_model.applicationAt(2).company, QString("Acme Robotics"));
+}
+
+void TestModel::sortsByStatusInWorkflowOrder()
+{
+    m_model.sort(ApplicationModel::StatusColumn, Qt::AscendingOrder);
+    QCOMPARE(m_model.applicationAt(0).status, Status::NotStarted);
+    QCOMPARE(m_model.applicationAt(1).status, Status::InProgress);
+    QCOMPARE(m_model.applicationAt(2).status, Status::Complete);
+}
+
+void TestModel::sortsByDueDateWithBlanksAtTheBottom()
+{
+    m_model.sort(ApplicationModel::DueColumn, Qt::AscendingOrder);
+    QVERIFY(m_model.applicationAt(0).dueDate.isValid());
+    QVERIFY(m_model.applicationAt(1).dueDate.isValid());
+    QVERIFY(!m_model.applicationAt(2).dueDate.isValid());
+}
+
+void TestModel::blanksStayAtTheBottomWhenSortingBackwards()
+{
+    m_model.sort(ApplicationModel::DueColumn, Qt::DescendingOrder);
+    QVERIFY(!m_model.applicationAt(2).dueDate.isValid());
+}
+
+void TestModel::keepsTheSortWhenTheListIsReplaced()
+{
+    m_model.sort(ApplicationModel::TitleColumn, Qt::AscendingOrder);
+
+    Application zed;
+    zed.title = "Zed Intern";
+    Application alpha;
+    alpha.title = "Alpha Intern";
+    m_model.setApplications({zed, alpha});
+
+    QCOMPARE(m_model.applicationAt(0).title, QString("Alpha Intern"));
+    QCOMPARE(m_model.applicationAt(1).title, QString("Zed Intern"));
+}
+
+void TestModel::applicationAtFollowsTheSort()
+{
+    m_model.sort(ApplicationModel::CompanyColumn, Qt::DescendingOrder);
+    QCOMPARE(m_model.data(cell(0, ApplicationModel::TitleColumn)).toString(), QString("Test Intern"));
+    QCOMPARE(m_model.applicationAt(0).company, QString("Initech"));
 }
 
 QTEST_GUILESS_MAIN(TestModel)
