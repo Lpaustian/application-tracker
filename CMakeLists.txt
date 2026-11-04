@@ -34,6 +34,11 @@ qt_add_executable(tracker WIN32
     src/mainwindow.cpp
     resources.qrc
 )
+# On Windows the icon is built into the .exe so it shows in Explorer and on the taskbar.
+if(WIN32)
+    enable_language(RC)
+    target_sources(tracker PRIVATE app.rc)
+endif()
 target_link_libraries(tracker PRIVATE tracker_core Qt6::Widgets)
 
 add_executable(tst_logic tests/tst_logic.cpp)

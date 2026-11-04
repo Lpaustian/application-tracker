@@ -5,6 +5,7 @@
 #include <QApplication>
 #include <QDir>
 #include <QFont>
+#include <QIcon>
 #include <QMessageBox>
 #include <QStandardPaths>
 
@@ -12,6 +13,7 @@ int main(int argc, char* argv[])
 {
     QApplication app(argc, argv);
     QApplication::setApplicationName("Internship Tracker");
+    QApplication::setWindowIcon(QIcon(":/resources/app-icon.png"));
     QApplication::setFont(QFont("Segoe UI", 10));
     app.setStyleSheet(style::styleSheet());
 
